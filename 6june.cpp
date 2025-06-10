@@ -190,7 +190,7 @@ int main() {
     vector<RowVectorXd> CT;
     for (int p=0; p<points.size(); p++) {
         //iteration over points
-        if(p%1000==0) cout<<"step- "<<p<<" done"<<endl;
+        if(p%100==0) cout<<"step- "<<p<<" done"<<endl;
             point p0=points[p];
             if (checklist.find(p0)!=checklist.end()) {
                 CT.push_back(RowVectorXd :: Zero(1));
