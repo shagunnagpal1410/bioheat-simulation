@@ -31,7 +31,7 @@ vector<vector<double>> readCSV(const string& filename) {
 }
 struct point{
     double x,y,z;
-    int voxel;
+    int voxel; 
     point(double i, double j, double k) {
         x=i, y=j, z=k;
         voxel=0;
@@ -173,7 +173,6 @@ int main() {
     for (int i=0; i<surface_points.size(); i++) {
         point p1={surface_points[i][0], surface_points[i][1], surface_points[i][2]};
         p1.voxel=provide_voxel(int(surface_points[i][0]/radius), int(surface_points[i][1]/radius), int(surface_points[i][2]/radius), voxels_inrow, voxels_incolumn);
-        points.push_back(p1);
         checklist[p1]=37.0;
     }
     int number=0;
@@ -181,22 +180,28 @@ int main() {
     for (int i=0; i<points.size(); i++) {
         point p1=points[i];
         if (checklist.find(p1)==checklist.end()) {
-            identity[p1]=number++;
+            identity[p1]=number;
+            number+=1;
         }
     }
     int known_points=checklist.size();
-    int unknown_points=points.size()-known_points;
+    int unknown_points=identity.size();
     VectorXd u_prev=VectorXd :: Constant(unknown_points,37.0);
-    vector<RowVectorXd> CT;
+    vector<RowVectorXd> CT(points.size());
+    cout<<points.size()<<endl;
+    vector<vector<point>> unknown_neighbours_list(points.size());
+    vector<vector<point>> known_neighbours_list(points.size());
+    ofstream fout2("check_validity.csv");
     for (int p=0; p<points.size(); p++) {
         //iteration over points
-        if(p%100==0) cout<<"step- "<<p<<" done"<<endl;
+        if(p%1000==0) cout<<"step- "<<p<<" done"<<endl;
             point p0=points[p];
             if (checklist.find(p0)!=checklist.end()) {
-                CT.push_back(RowVectorXd :: Zero(1));
+                fout2<<p<<","<<"known point"<<"\n";
                 continue;
             }
             else {
+                int total_neighbours=0;
                 vector<point> known_neighbours;
                 vector<point> unknown_neighbours;
                 int voxel_number=p0.voxel;
@@ -214,12 +219,15 @@ int main() {
                             else {
                                 unknown_neighbours.push_back(p2);
                             }
+                            total_neighbours+=1;
                         }
                         //neighbourhood points collected
+                        if(total_neighbours>=200) break;
                     }
                     //neighbouring voxels ending
+                    if(total_neighbours>=200) break;
                 }
-                int total_neighbours=known_neighbours.size()+unknown_neighbours.size();
+                total_neighbours=known_neighbours.size()+unknown_neighbours.size();
                 MatrixXd M(total_neighbours,10);
                 RowVectorXd L(10);
                 MatrixXd W=MatrixXd :: Zero(total_neighbours, total_neighbours);
@@ -242,10 +250,24 @@ int main() {
                 }
                 L<<0,0,0,0,2,2,2,0,0,0;
                 MatrixXd MTWM = M.transpose() * W * M;
-                CT.push_back(L * MTWM.ldlt().solve(M.transpose() * W));
+                CT[p]=(L * MTWM.ldlt().solve(M.transpose() * W));
+                known_neighbours_list[p]=known_neighbours;
+                unknown_neighbours_list[p]=unknown_neighbours;
+                fout2<<p<<","<<"unknown point"<<",";
+                for (int i=0; i<CT[p].size(); i++) {
+                    if (i!=CT[p].size()-1) {
+                        fout2<<CT[p][i]<<",";
+                    }
+                    else {
+                        fout2<<CT[p][i]<<"\n";
+                    }
+                }
+                // Check size
+
             }
             //iterations over points ending
         }
+        fout2.close();
     int store_time=INT_MAX;
     for (int t=1; t<=n; t++) {
     //starting of time loop
@@ -272,28 +294,8 @@ int main() {
                     Qm=0;
                 }
                 double wb=3.6*0.001;
-                vector<point> known_neighbours;
-                vector<point> unknown_neighbours;
-                int voxel_number=p0.voxel;
-                for (int i=0; i<voxel_neighbours[voxel_number].size(); i++) {
-                    //neighbouring voxels starting
-                    int neighbour_voxel=voxel_neighbours[voxel_number][i];
-                    for (int j=0; j<points_insidevoxel[neighbour_voxel].size(); j++ ) {
-                        //collecting neighbourhood points
-                        point p2=points_insidevoxel[neighbour_voxel][j];
-                        double distance=pow(p0.x-p2.x,2)+pow(p0.y-p2.y,2)+pow(p0.z-p2.z,2);
-                        if (distance>0.0 && distance<pow(radius,2.0)) {
-                            if(checklist.find(p2)!=checklist.end()) {
-                                known_neighbours.push_back(p2);
-                            }
-                            else {
-                                unknown_neighbours.push_back(p2);
-                            }
-                        }
-                        //neighbourhood points collected
-                    }
-                    //neighbouring voxels ending
-                }
+                vector<point> known_neighbours=known_neighbours_list[p];
+                vector<point> unknown_neighbours=unknown_neighbours_list[p];
                 int total_neighbours=known_neighbours.size()+unknown_neighbours.size();
                 double constant=(u_prev(identity[p0])*((-rhot*Ct/(Kt*d))))-(Qm/Kt)-(rhob*wb*Cb*Ta/Kt);
                 for (int i=0; i<unknown_neighbours.size(); i++) {
@@ -303,7 +305,6 @@ int main() {
                 for (int i=0; i<known_neighbours.size(); i++){
                     constant-=CT[p](unknown_neighbours.size()+i)*checklist[known_neighbours[i]];
                 }
-                cout<<"Step- "<<p<<" done"<<endl;
                 coefficients.push_back(Tri(row_number, row_number, -(rhot*Ct/(Kt*d))-(rhob*wb*Cb/Kt)));
                 rhs(row_number)=constant;
                 //coeffecient matrix is done
@@ -311,17 +312,39 @@ int main() {
             //iterations over points ending
         }
             A.setFromTriplets(coefficients.begin(), coefficients.end());
-            SimplicialLDLT<SparseMatrix<double>> solver;
+            bool has_zero_row = false;
+for (int i = 0; i < A.rows(); ++i) {
+    bool nonzero_found = false;
+    for (Eigen::SparseMatrix<double>::InnerIterator it(A, i); it; ++it) {
+        if (std::abs(it.value()) > 1e-12) {
+            nonzero_found = true;
+            break;
+        }
+    }
+    if (!nonzero_found) {
+        cout << " Row " << i << " of matrix A is all zeros!" << endl;
+        has_zero_row = true;
+    }
+}
+if (has_zero_row) {
+    cout << "Matrix A has one or more all-zero rows. SparseLU will fail." << endl;
+}
+            cout<<"Matrix Successfully formed!"<<endl;
+
+            SparseLU<SparseMatrix<double>, COLAMDOrdering<int>> solver;
             solver.compute(A);
-            if(solver.info() != Success) {
-                cout << "Decomposition failed!" << endl;
-                break;
+            if (solver.info() !=Success) {
+                cerr << "[ERROR] Decomposition failed!\n";
+                return -1;
             }
+
             VectorXd u_next = solver.solve(rhs);
-            if(solver.info() != Success) {
-                cout << "Solving failed!" << endl;
-                break;
+            if (solver.info() != Success) {
+                cerr << "[ERROR] Solving failed!\n";
+                return -1;
             }
+
+            cout << "[SUCCESS] System solved! Max temp: " << u_next.maxCoeff() << "\n";
             u_prev = u_next;
     //time loop ending here
     }
