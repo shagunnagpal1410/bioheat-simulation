@@ -68,7 +68,7 @@ double find_Qm(point p1, double x1, double y1, double z1, double x2, double y2, 
 }
 double find_W(point Ni, point p) {
     double value=pow(Ni.x-p.x,2)+pow(Ni.y-p.y,2)+pow(Ni.z-p.z,2);
-    double radius=10;
+    double radius=10/1000.0;
     if (pow(value,0.5)/radius>1) {
         return 0.0;
     }
@@ -130,17 +130,23 @@ int main() {
         volume_points[i][0]+=104;
         volume_points[i][1]-=70;
         volume_points[i][2]+=118;
+        volume_points[i][0]/=1000.0;
+        volume_points[i][1]/=1000.0;
+        volume_points[i][2]/=1000.0;
     }
     for (int i=0; i<surface_points.size(); i++) {
         surface_points[i][0]+=104;
         surface_points[i][1]-=70;
         surface_points[i][2]+=118;
+        surface_points[i][0]/=1000.0;
+        surface_points[i][1]/=1000.0;
+        surface_points[i][2]/=1000.0;
     }
     //dimensions of cube 98 X 100 X 93
-    double radius=10.0;
-    int voxels_inrow=int(98.0/radius)+1;
-    int voxels_incolumn=int(100.0/radius)+1;
-    int voxels_inz=int(93.0/radius)+1;
+    double radius=10.0/1000.0;
+    int voxels_inrow=int((98.0/1000.0)/radius)+1;
+    int voxels_incolumn=int((100.0/1000.0)/radius)+1;
+    int voxels_inz=int((93.0/1000.0)/radius)+1;
     vector<point> points;
     for (int i=0; i<volume_points.size(); i++) {
         point p1=point(volume_points[i][0],volume_points[i][1], volume_points[i][2]);
