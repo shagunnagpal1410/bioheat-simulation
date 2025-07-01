@@ -4,9 +4,22 @@ This C++ project models **3D heat distribution** in biological tissue using the 
 
 ---
 
-## 📁 Input Files Required
+## ⚙️ Running the Code
 
-Make sure the following CSV files are in the **same folder** as `6june.cpp` before running:
+To run the simulation:
+
+```
+Ctrl + Shift + B
+```
+
+> Your `tasks.json` must be properly configured to compile and execute `6june.cpp`.  
+> Ensure it includes the correct include path for the Eigen library.
+
+---
+
+## 📁 Required Input Files
+
+Place these files in the same folder as `6june.cpp`:
 
 | File Name             | Description                            |
 |----------------------|----------------------------------------|
@@ -16,42 +29,12 @@ Make sure the following CSV files are in the **same folder** as `6june.cpp` befo
 
 ---
 
-## ⚙️ Dependencies
-
-- **C++17 or later**
-- [Eigen Library](https://eigen.tuxfamily.org/) (used for sparse linear algebra)
-
-Make sure the Eigen headers are accessible during compilation.
-
----
-
-## 🚀 How to Compile and Run
-
-### Compile
-```bash
-g++ 6june.cpp -o thermal_sim -O2 -std=c++17
-```
-
-> Replace `g++` with `g++-11` or similar if required.
-
-### Run
-```bash
-./thermal_sim
-```
-
-You will be prompted to enter:
-- Maximum simulation time
-- Time step size
-- Coordinates and `alpha` values for three heat-delivering needles
-
----
-
 ## 📦 Output Files
 
-| File Name         | Description                                             |
-|------------------|---------------------------------------------------------|
-| `6june.csv`       | Contains final coordinates and corresponding temperatures |
-| `check_validity.csv` | Debug info: identifies known/unknown nodes and interpolation weights |
+| File Name           | Description                                                    |
+|--------------------|----------------------------------------------------------------|
+| `6june.csv`        | Final coordinates and temperature values                        |
+| `check_validity.csv` | Diagnostic info on unknown points and their interpolation weights |
 
 ---
 
@@ -60,9 +43,9 @@ You will be prompted to enter:
 - Solves the **Pennes Bioheat Transfer Equation**
 - Uses **Gaussian source model** for multiple needles
 - Implements **meshfree Laplacian** via Moving Least Squares (MLS)
-- Applies **Dirichlet boundary conditions** at surface
-- Disables heat sources after tissue exceeds **105°C**
-- Efficiently handles large 3D point clouds with voxel-based spatial search
+- Applies **Dirichlet boundary conditions** at the tissue surface
+- Turns off heat sources when tissue temperature exceeds **105°C**
+- Handles large 3D point clouds efficiently via voxelization
 
 ---
 
@@ -73,3 +56,12 @@ This simulation can be used for:
 - **Thermal ablation modeling** in liver or tumor tissue
 - Studying **bioheat propagation** in heterogeneous media
 - Educational demonstrations of **meshfree methods (FPM)**
+
+---
+
+## 📁 Dependencies
+
+- [Eigen Library](https://eigen.tuxfamily.org/)  
+  Required for sparse matrix and linear algebra operations.
+
+> Ensure Eigen is included in your include paths inside `tasks.json`.
