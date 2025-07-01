@@ -254,7 +254,7 @@ int main() {
                     W(number,number)=find_W(p3,p0);
                     number+=1;
                 }
-                L<<0,0,0,0,2,2,2,0,0,0;
+                L<<0,0,0,0,1,1,1,0,0,0;
                 MatrixXd MTWM = M.transpose() * W * M;
                 CT[p]=(L * MTWM.ldlt().solve(M.transpose() * W));
                 known_neighbours_list[p]=known_neighbours;
